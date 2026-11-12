@@ -26,7 +26,9 @@ export class AuthController {
         res.cookie("access_token", result.accessToken, {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
-            sameSite: "lax",
+            // The frontend and API are on different sites in production, so
+            // browsers require SameSite=None for credentialed XHR requests.
+            sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
             maxAge: 15 * 60 * 1000,
             path: "/",
         });
@@ -101,7 +103,7 @@ export class AuthController {
         res.cookie("access_token", result.accessToken, {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
-            sameSite: "lax",
+            sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
             maxAge: 15 * 60 * 1000,
             path: "/",
         });
@@ -115,7 +117,7 @@ export class AuthController {
         res.clearCookie("access_token", {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
-            sameSite: "lax",
+            sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
             path: "/",
         });
 
