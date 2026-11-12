@@ -21,4 +21,10 @@ async function bootstrap() {
   )
   await app.listen(process.env.PORT ?? 3000);
 }
-await bootstrap();
+
+// Vercel's NestJS runtime expects the conventional non-blocking bootstrap.
+// Log startup failures so they are visible in the function's runtime logs.
+void bootstrap().catch((error: unknown) => {
+  console.error('NestJS bootstrap failed:', error);
+  throw error;
+});
