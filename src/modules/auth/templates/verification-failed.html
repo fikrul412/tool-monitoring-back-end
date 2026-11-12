@@ -1,0 +1,130 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verification Failed</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f8fafc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 16px;
+            text-align: center;
+            max-width: 400px;
+            width: calc(100% - 48px);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+            box-sizing: border-box;
+        }
+
+        h1 { color: #dc2626; }
+        p { color: #64748b; line-height: 1.6; }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            margin-top: 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 14px;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            margin-top: 12px;
+            background: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        button:disabled {
+            background: #94a3b8;
+            cursor: not-allowed;
+        }
+
+        #message {
+            margin-top: 16px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Verification Failed</h1>
+
+        <p>Your verification link is invalid or has expired.</p>
+        <p>Enter your email address to request a new verification link.</p>
+
+        <form id="resend-form">
+            <input
+                type="email"
+                id="email"
+                placeholder="Enter your email address"
+                required
+            />
+
+            <button type="submit" id="resend-button">
+                Resend Verification Email
+            </button>
+        </form>
+
+        <p id="message"></p>
+    </div>
+
+    <script>
+        const form = document.getElementById("resend-form");
+        const button = document.getElementById("resend-button");
+        const message = document.getElementById("message");
+
+        form.addEventListener("submit", async (event) => {
+            event.preventDefault();
+
+            const email = document.getElementById("email").value;
+
+            button.disabled = true;
+            button.textContent = "Sending...";
+            message.textContent = "";
+
+            try {
+                const response = await fetch("/auth/resend-verification", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ email }),
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.message || "Unable to send verification email.");
+                }
+
+                message.style.color = "#16a34a";
+                message.textContent = data.message;
+            } catch (error) {
+                message.style.color = "#dc2626";
+                message.textContent = error.message || "Something went wrong.";
+            } finally {
+                button.disabled = false;
+                button.textContent = "Resend Verification Email";
+            }
+        });
+    </script>
+</body>
+</html>

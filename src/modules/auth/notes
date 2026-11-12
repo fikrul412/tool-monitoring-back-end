@@ -1,0 +1,27 @@
+For now, we use email verification
+
+However, for further implementation. I think we should consider making
+accept by admin pattern.
+
+
+----
+We should create different frontend
+- Register for students
+- Register for lecturer
+
+
+----
+modules/
+├── auth/
+│   ├── auth.controller.ts
+│   ├── auth.service.ts
+│   └── dto/
+│       ├── register-student.dto.ts
+│       └── login.dto.ts
+│
+├── users/
+│   ├── users.controller.ts
+│   ├── users.service.ts
+│   └── dto/
+│       ├── create-lecturer.dto.ts
+│       └── create-admin.dto.ts
