@@ -22,3 +22,5 @@ export * from './scheduling.schema.js';
 export * from './borrowing.schema.js';
 
 export * from './auth.schema.js'
+
+export * from './persuratan.schema.js';

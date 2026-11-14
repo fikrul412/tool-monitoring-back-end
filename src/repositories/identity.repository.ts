@@ -49,6 +49,21 @@ export class IdentityRepository {
     return user ?? null;
   }
 
+  async findStudentPublicProfile(studentId: string) {
+    const [student] = await this.db.select({ id: students.id, name: students.name, nim: students.nim, whatsapp: students.whatsapp })
+      .from(students).where(eq(students.id, studentId)).limit(1);
+    return student ?? null;
+  }
+
+  async updateOwnProfile(userId: string, role: 'STUDENT' | 'LECTURER', data: { name: string; whatsapp: string | null }) {
+    if (role === 'STUDENT') {
+      const [profile] = await this.db.update(students).set(data).where(eq(students.id, userId)).returning();
+      return profile ?? null;
+    }
+    const [profile] = await this.db.update(lecturers).set(data).where(eq(lecturers.id, userId)).returning();
+    return profile ?? null;
+  }
+
   async findUserByEmail(email: string): Promise<User | null> {
     const [user] = await this.db
       .select()

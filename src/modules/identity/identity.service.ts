@@ -33,6 +33,22 @@ export class IdentityService {
     return user;
   }
 
+  async getStudentPublicProfile(studentId: string) {
+    const profile = await this.identityRepository.findStudentPublicProfile(studentId);
+    if (!profile) throw new NotFoundException('Student not found.');
+    return profile;
+  }
+
+  async updateMyProfile(userId: string, role: string, dto: { name: string; whatsapp?: string | null }) {
+    if (role !== 'STUDENT' && role !== 'LECTURER') throw new ConflictException('Only students and lecturers can edit their profile.');
+    const name = dto.name?.trim();
+    const whatsapp = dto.whatsapp?.trim() || null;
+    if (!name) throw new ConflictException('Name is required.');
+    const profile = await this.identityRepository.updateOwnProfile(userId, role, { name, whatsapp });
+    if (!profile) throw new NotFoundException('Profile not found.');
+    return this.getMe(userId);
+  }
+
   // ADMIN: USER MANAGEMENT
   async getUsers(query: GetUsersQueryDto) {
     return this.identityRepository.findUsers({

@@ -55,11 +55,9 @@ export class ResearchController {
     async reviewResearch(
         @Param("id", ParseUUIDPipe) id: string,
         @Body() data: ReviewResearchDto,
-        @Req() req: AuthenticatedRequest,
     ) {
         return this.researchService.reviewResearch(
             id,
-            req.user.sub,
             data,
         );
     }
@@ -69,9 +67,17 @@ export class ResearchController {
     async updateResearchStatus(
         @Param("id", ParseUUIDPipe) id: string,
         @Body() data: UpdateResearchStatusDto,
+    ) {
+        return this.researchService.updateResearchStatus(id, data);
+    }
+
+    @Post(":id/complete")
+    @Roles("STUDENT")
+    async requestResearchCompletion(
+        @Param("id", ParseUUIDPipe) id: string,
         @Req() req: AuthenticatedRequest,
     ) {
-        return this.researchService.updateResearchStatus(id, req.user.sub, data);
+        return this.researchService.requestCompletion(id, req.user.sub);
     }
 
     @Post()

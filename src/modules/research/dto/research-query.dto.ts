@@ -16,8 +16,8 @@ export class ResearchQueryDto {
   search?: string;
 
   @IsOptional()
-  @IsIn(["PENDING", "APPROVED", "REJECTED", "ONGOING", "COMPLETED", "CANCELLED"])
-  status?: "PENDING" | "APPROVED" | "REJECTED" | "ONGOING" | "COMPLETED" | "CANCELLED";
+  @IsIn(["PENDING", "APPROVED", "REJECTED", "ONGOING", "COMPLETION_REQUESTED", "COMPLETED", "ARCHIVED", "CANCELLED"])
+  status?: "PENDING" | "APPROVED" | "REJECTED" | "ONGOING" | "COMPLETION_REQUESTED" | "COMPLETED" | "ARCHIVED" | "CANCELLED";
 
   @IsOptional()
   @Type(() => Number)

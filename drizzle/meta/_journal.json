@@ -15,6 +15,69 @@
                         "when":  1794462111562,
                         "tag":  "0001_reviewer_user_fk",
                         "breakpoints":  true
+                    },
+                    {
+                        "idx":  2,
+                        "version":  "7",
+                        "when":  1794550000000,
+                        "tag":  "0002_remove_research_log_reviewer",
+                        "breakpoints":  true
+                    },
+                    {
+                        "idx":  3,
+                        "version":  "7",
+                        "when":  1794700800000,
+                        "tag":  "0003_remove_material_quantity",
+                        "breakpoints":  true
+                    },
+                    {
+                        "idx":  4,
+                        "version":  "7",
+                        "when":  1794700900000,
+                        "tag":  "0004_material_availability",
+                        "breakpoints":  true
+                    },
+                    {
+                        "idx":  5,
+                        "version":  "7",
+                        "when":  1794701000000,
+                        "tag":  "0005_persuratan",
+                        "breakpoints":  true
+                    },
+                    {
+                        "idx":  6,
+                        "version":  "7",
+                        "when":  1794701100000,
+                        "tag":  "0006_persuratan_review",
+                        "breakpoints":  true
+                    },
+                    {
+                        "idx":  7,
+                        "version":  "7",
+                        "when":  1794701200000,
+                        "tag":  "0007_research_archived",
+                        "breakpoints":  true
+                    },
+                    {
+                        "idx":  8,
+                        "version":  "7",
+                        "when":  1794701300000,
+                        "tag":  "0008_completion_requested",
+                        "breakpoints":  true
+                    },
+                    {
+                        "idx":  9,
+                        "version":  "7",
+                        "when":  1794701400000,
+                        "tag":  "0009_borrowing_workflows",
+                        "breakpoints":  true
+                    },
+                    {
+                        "idx":  10,
+                        "version":  "7",
+                        "when":  1794701500000,
+                        "tag":  "0010_lecturer_attendance",
+                        "breakpoints":  true
                     }
                 ]
 }

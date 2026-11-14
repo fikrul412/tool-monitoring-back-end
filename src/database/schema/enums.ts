@@ -25,7 +25,9 @@ export const researchStatusEnum = pgEnum('research_status', [
   'APPROVED',
   'REJECTED',
   'ONGOING',
+  'COMPLETION_REQUESTED',
   'COMPLETED',
+  'ARCHIVED',
   'CANCELLED',
 ]);
 
@@ -74,10 +76,18 @@ export const borrowingTypeEnum = pgEnum('borrowing_type', [
 ]);
 
 export const borrowingStatusEnum = pgEnum('borrowing_status', [
+  'PENDING',
   'AVAILABLE',
   'BORROWED',
   'DAMAGED',
   'LOST',
+  'REJECTED',
+]);
+
+export const materialRequestStatusEnum = pgEnum('material_request_status', [
+  'PENDING',
+  'APPROVED',
+  'REJECTED',
 ]);
 
 export const authProviderEnum = pgEnum('auth_provider', [

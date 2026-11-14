@@ -15,6 +15,7 @@ import { researches } from './research.schema.js';
 import {
   borrowingTypeEnum,
   borrowingStatusEnum,
+  materialRequestStatusEnum,
 } from './enums.js';
 
 export const toolBorrowingLogs = pgTable(
@@ -69,6 +70,10 @@ export const materialBorrowingLogs = pgTable(
       precision: 15,
       scale: 4,
     }).notNull(),
+
+    approvalStatus: materialRequestStatusEnum('approval_status').default('PENDING').notNull(),
+
+    reviewComments: text('review_comments'),
 
     type: borrowingTypeEnum('type').notNull(),
 

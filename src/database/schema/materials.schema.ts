@@ -5,7 +5,6 @@ import {
   varchar,
   text,
   timestamp,
-  numeric,
   boolean,
   check,
   primaryKey,
@@ -33,14 +32,9 @@ export const materials = pgTable(
 
     lecturerId: uuid('lecturer_id').references(() => lecturers.id),
 
-    quantity: numeric('quantity', {
-      precision: 15,
-      scale: 4,
-    }).default('0').notNull(),
-
     unit: varchar('unit', { length: 50 }).notNull(),
 
-    isMonitored: boolean('is_monitored')
+    isAvailable: boolean('is_available')
       .default(true)
       .notNull(),
 

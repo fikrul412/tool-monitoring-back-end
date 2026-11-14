@@ -4,6 +4,7 @@ import {
   Controller,
   Get,
   Param,
+  ParseUUIDPipe,
   Patch,
   Post,
   Query,
@@ -26,7 +27,8 @@ import {
   CreateManagedUserDto,
   GetUsersQueryDto,
   UpdateUserStatusDto,
-  GetLecturersQueryDto
+  GetLecturersQueryDto,
+  UpdateOwnProfileDto,
 } from "./dto/identity.dto.js";
 
 type AuthenticatedRequest = Request & {
@@ -54,6 +56,18 @@ export class IdentityController {
   @UseGuards(JwtAuthGuard)
   getMe(@Req() req: AuthenticatedRequest) {
     return this.identityService.getMe(req.user.sub);
+  }
+
+  @Patch('me/profile')
+  @UseGuards(JwtAuthGuard)
+  updateMyProfile(@Req() req: AuthenticatedRequest, @Body() dto: UpdateOwnProfileDto) {
+    return this.identityService.updateMyProfile(req.user.sub, req.user.role, dto);
+  }
+
+  @Get('students/:id/profile')
+  @UseGuards(JwtAuthGuard)
+  getStudentPublicProfile(@Param('id', ParseUUIDPipe) id: string) {
+    return this.identityService.getStudentPublicProfile(id);
   }
   // ADMIN: USER MANAGEMENT
   @Get("admin/users")

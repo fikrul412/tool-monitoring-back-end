@@ -84,6 +84,17 @@ export class UpdateUserStatusDto {
   status: "ACTIVE" | "SUSPENDED";
 }
 
+export class UpdateOwnProfileDto {
+  @IsString()
+  @IsNotEmpty()
+  @MinLength(1)
+  name: string;
+
+  @IsOptional()
+  @IsString()
+  whatsapp?: string | null;
+}
+
 export class GetLecturersQueryDto {
   @IsOptional()
   @IsString()

@@ -8,7 +8,6 @@ import {
 
 import { researches } from './research.schema.js';
 import { researchStatusEnum } from './enums.js';
-import { users } from "./identity.schema.js";
 export const researchApplicationLogs = pgTable(
   'research_application_logs',
   {
@@ -26,8 +25,6 @@ export const researchApplicationLogs = pgTable(
       withTimezone: true,
     }).defaultNow().notNull(),
 
-    reviewedBy: uuid("reviewed_by")
-  .references(() => users.id),
   },
 );
 

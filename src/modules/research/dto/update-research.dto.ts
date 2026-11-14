@@ -45,4 +45,10 @@ export class UpdateResearchDto {
   @ArrayUnique()
   @IsUUID("4", { each: true })
   toolIds?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @ArrayUnique()
+  @IsUUID("4", { each: true })
+  materialIds?: string[];
 }

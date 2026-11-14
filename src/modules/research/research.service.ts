@@ -56,6 +56,11 @@ export class ResearchService {
           "One or more equipment items are unavailable or do not exist.",
         );
 
+      case "INVALID_MATERIALS":
+        throw new BadRequestException(
+          "One or more selected materials are unavailable or do not exist.",
+        );
+
       case "SUCCESS":
         return result.research;
     }
@@ -63,12 +68,10 @@ export class ResearchService {
 
   async reviewResearch(
     researchId: string,
-    reviewerId: string,
     data: ReviewResearchDto,
   ) {
     const result = await this.researchRepository.review(
       researchId,
-      reviewerId,
       data,
     );
 
@@ -87,12 +90,18 @@ export class ResearchService {
 
   async updateResearchStatus(
     researchId: string,
-    reviewerId: string,
-    data: { status: "ONGOING" | "COMPLETED" | "CANCELLED"; comments?: string },
+    data: { status: "ONGOING" | "CANCELLED"; comments?: string },
   ) {
-    const result = await this.researchRepository.updateStatus(researchId, reviewerId, data);
+    const result = await this.researchRepository.updateStatus(researchId, data);
     if (result.outcome === "NOT_FOUND") throw new NotFoundException("Research not found.");
     if (result.outcome === "INVALID_TRANSITION") throw new ConflictException("This research cannot move to that status.");
+    return result.research;
+  }
+
+  async requestCompletion(researchId: string, studentId: string) {
+    const result = await this.researchRepository.requestCompletion(researchId, studentId);
+    if (result.outcome === "NOT_FOUND") throw new NotFoundException("Research not found.");
+    if (result.outcome === "INVALID_TRANSITION") throw new ConflictException("Only ongoing research can be submitted for completion.");
     return result.research;
   }
 
@@ -149,6 +158,15 @@ export class ResearchService {
       );
     }
 
+    const materialIds = data.materialIds ?? [];
+    const availableMaterialIds =
+      await this.researchRepository.findAvailableMaterialIds(materialIds);
+    if (availableMaterialIds.length !== materialIds.length) {
+      throw new BadRequestException(
+        "One or more selected materials are unavailable or do not exist.",
+      );
+    }
+
     return this.researchRepository.create(studentId, data);
   }
 
@@ -160,7 +178,7 @@ export class ResearchService {
     limit: number,
     filters?: {
       search?: string;
-      status?: "PENDING" | "APPROVED" | "REJECTED" | "ONGOING" | "COMPLETED" | "CANCELLED";
+      status?: "PENDING" | "APPROVED" | "REJECTED" | "ONGOING" | "COMPLETION_REQUESTED" | "COMPLETED" | "ARCHIVED" | "CANCELLED";
     },
   ) {
     const safePage = Math.max(1, page || 1);
@@ -176,7 +194,7 @@ export class ResearchService {
     studentId: string,
     page = 1,
     limit = 10,
-    filters?: { search?: string; status?: "PENDING" | "APPROVED" | "REJECTED" | "ONGOING" | "COMPLETED" | "CANCELLED" },
+    filters?: { search?: string; status?: "PENDING" | "APPROVED" | "REJECTED" | "ONGOING" | "COMPLETION_REQUESTED" | "COMPLETED" | "ARCHIVED" | "CANCELLED" },
   ) {
     const safePage = Math.max(1, page);
     const safeLimit = Math.min(100, Math.max(1, limit));

@@ -130,7 +130,7 @@ describe("EquipmentService", () => {
         "user-1",
         "ADMIN",
       ),
-    ).rejects.toThrow("lecturerId must be provided when ownerType is LECTURER");
+    ).rejects.toThrow("lecturerId is required when ownerType is LECTURER");
   });
 
   it("should reject labId when ownerType is LECTURER", async () => {
@@ -140,13 +140,14 @@ describe("EquipmentService", () => {
           name: "Test Tool",
           ownerType: "LECTURER",
           lecturerId: "lec-1",
+          assignedLabId: "lab-1",
           labId: "lab-1",
           status: "AVAILABLE",
         },
         "user-1",
         "ADMIN",
       ),
-    ).rejects.toThrow("labId must be null when ownerType is LECTURER");
+    ).rejects.toThrow("labId must not be provided for lecturer-owned equipment");
   });
 
   it("should create tool with LECTURER ownerType when authorized", async () => {
@@ -164,6 +165,7 @@ describe("EquipmentService", () => {
         name: "Alat Dosen",
         ownerType: "LECTURER",
         lecturerId: "lec-1",
+        assignedLabId: "lab-1",
         status: "AVAILABLE",
       },
       "user-1",

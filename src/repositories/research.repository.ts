@@ -24,13 +24,15 @@ import {
   researchLabs,
   researchTools,
 } from "../database/schema/research.schema.js";
+import { materials, researchMaterials } from "../database/schema/materials.schema.js";
 
 import { researchApplicationLogs } from "../database/schema/research-application.schema.js";
+import { letterApplications } from "../database/schema/persuratan.schema.js";
 
 import {
   students,
   lecturers,
-  users,
+  users
 } from "../database/schema/identity.schema.js";
 import { labs } from "../database/schema/laboratory.schema.js";
 import { tools } from "../database/schema/equipment.schema.js";
@@ -89,6 +91,12 @@ export class ResearchRepository {
         );
       }
 
+      if (data.materialIds?.length) {
+        await tx.insert(researchMaterials).values(
+          data.materialIds.map((materialId) => ({ researchId: research.id, materialId })),
+        );
+      }
+
       // 5. Create initial application log
       await tx.insert(researchApplicationLogs).values({
         researchId: research.id,
@@ -108,7 +116,7 @@ export class ResearchRepository {
     limit: number,
     filters?: {
       search?: string;
-      status?: "PENDING" | "APPROVED" | "REJECTED" | "ONGOING" | "COMPLETED" | "CANCELLED";
+      status?: "PENDING" | "APPROVED" | "REJECTED" | "ONGOING" | "COMPLETION_REQUESTED" | "COMPLETED" | "ARCHIVED" | "CANCELLED";
     },
   ) {
     const offset = (page - 1) * limit;
@@ -246,6 +254,19 @@ export class ResearchRepository {
         }
       }
 
+      if (data.materialIds !== undefined && data.materialIds.length > 0) {
+        const materialsFound = await tx
+          .select({ id: materials.id })
+          .from(materials)
+          .where(and(
+            inArray(materials.id, data.materialIds),
+            eq(materials.isAvailable, true),
+          ));
+        if (materialsFound.length !== data.materialIds.length) {
+          return { outcome: "INVALID_MATERIALS" as const };
+        }
+      }
+
       // 5. Prepare research updates
       const updateData: Partial<typeof researches.$inferInsert> = {
         updatedAt: new Date(),
@@ -317,6 +338,15 @@ export class ResearchRepository {
         }
       }
 
+      if (data.materialIds !== undefined) {
+        await tx.delete(researchMaterials).where(eq(researchMaterials.researchId, researchId));
+        if (data.materialIds.length > 0) {
+          await tx.insert(researchMaterials).values(
+            data.materialIds.map((materialId) => ({ researchId, materialId })),
+          );
+        }
+      }
+
       return {
         outcome: "SUCCESS" as const,
         research: updatedResearch,
@@ -326,7 +356,6 @@ export class ResearchRepository {
 
   async review(
     researchId: string,
-    reviewerId: string,
     data: ReviewResearchDto,
   ) {
     return this.db.transaction(async (tx) => {
@@ -364,7 +393,6 @@ export class ResearchRepository {
         researchId,
         status: data.status,
         comments: data.comments?.trim() || null,
-        reviewedBy: reviewerId,
       });
 
       return {
@@ -376,8 +404,7 @@ export class ResearchRepository {
 
   async updateStatus(
     researchId: string,
-    reviewerId: string,
-    data: { status: "ONGOING" | "COMPLETED" | "CANCELLED"; comments?: string },
+    data: { status: "ONGOING" | "CANCELLED"; comments?: string },
   ) {
     return this.db.transaction(async (tx) => {
       const [existing] = await tx.select({ id: researches.id, status: researches.status })
@@ -385,17 +412,37 @@ export class ResearchRepository {
       if (!existing) return { outcome: "NOT_FOUND" as const };
       const allowed: string[] = existing.status === "APPROVED"
         ? ["ONGOING", "CANCELLED"]
-        : existing.status === "ONGOING" ? ["COMPLETED", "CANCELLED"] : [];
+        : existing.status === "ONGOING" ? ["CANCELLED"] : [];
       if (!allowed.includes(data.status)) return { outcome: "INVALID_TRANSITION" as const };
       const [research] = await tx.update(researches)
         .set({ status: data.status, updatedAt: new Date() })
         .where(eq(researches.id, researchId)).returning();
+      if (existing.status === "APPROVED" && data.status === "ONGOING") {
+        await tx.update(letterApplications)
+          .set({ status: "RECEIVED", updatedAt: new Date() })
+          .where(and(
+            eq(letterApplications.researchId, researchId),
+            eq(letterApplications.type, "LAB_ACCESS"),
+          ));
+      }
       await tx.insert(researchApplicationLogs).values({
         researchId,
         status: data.status,
         comments: data.comments?.trim() || null,
-        reviewedBy: reviewerId,
       });
+      return { outcome: "SUCCESS" as const, research };
+    });
+  }
+
+  async requestCompletion(researchId: string, studentId: string) {
+    return this.db.transaction(async (tx) => {
+      const [existing] = await tx.select({ id: researches.id, status: researches.status })
+        .from(researches).where(and(eq(researches.id, researchId), eq(researches.studentId, studentId))).for("update");
+      if (!existing) return { outcome: "NOT_FOUND" as const };
+      if (existing.status !== "ONGOING") return { outcome: "INVALID_TRANSITION" as const };
+      const [research] = await tx.update(researches).set({ status: "COMPLETION_REQUESTED", updatedAt: new Date() })
+        .where(eq(researches.id, researchId)).returning();
+      await tx.insert(researchApplicationLogs).values({ researchId, status: "COMPLETION_REQUESTED", comments: "Student submitted a request to complete this research." });
       return { outcome: "SUCCESS" as const, research };
     });
   }
@@ -449,6 +496,19 @@ export class ResearchRepository {
 
     return result.map((tool) => tool.id);
   }
+
+  async findAvailableMaterialIds(ids: string[]): Promise<string[]> {
+    if (ids.length === 0) return [];
+    const result = await this.db
+      .select({ id: materials.id })
+      .from(materials)
+      .where(and(
+        inArray(materials.id, ids),
+        eq(materials.isAvailable, true),
+      ));
+    return result.map((material) => material.id);
+  }
+
   async findById(researchId: string) {
     // Research and student information
     const [research] = await this.db
@@ -523,11 +583,19 @@ export class ResearchRepository {
       .where(eq(researchTools.researchId, researchId))
       .orderBy(asc(tools.name));
 
+    const selectedMaterials = await this.db
+      .select({ id: materials.id, name: materials.name, unit: materials.unit })
+      .from(researchMaterials)
+      .innerJoin(materials, eq(researchMaterials.materialId, materials.id))
+      .where(eq(researchMaterials.researchId, researchId))
+      .orderBy(asc(materials.name));
+
     return {
       ...research,
       supervisors,
       laboratories,
       equipment,
+      materials: selectedMaterials,
     };
   }
 
@@ -563,7 +631,7 @@ export class ResearchRepository {
     studentId: string,
     page = 1,
     limit = 10,
-    filters?: { search?: string; status?: "PENDING" | "APPROVED" | "REJECTED" | "ONGOING" | "COMPLETED" | "CANCELLED" },
+    filters?: { search?: string; status?: "PENDING" | "APPROVED" | "REJECTED" | "ONGOING" | "COMPLETION_REQUESTED" | "COMPLETED" | "ARCHIVED" | "CANCELLED" },
   ) {
     const conditions = [eq(researches.studentId, studentId)];
     if (filters?.status) conditions.push(eq(researches.status, filters.status));
@@ -614,18 +682,8 @@ export class ResearchRepository {
         status: researchApplicationLogs.status,
         comments: researchApplicationLogs.comments,
         createdAt: researchApplicationLogs.createdAt,
-        reviewedBy: researchApplicationLogs.reviewedBy,
-
-        reviewer: {
-          id: users.id,
-          email: users.email,
-        },
       })
       .from(researchApplicationLogs)
-      .leftJoin(
-        users,
-        eq(researchApplicationLogs.reviewedBy, users.id),
-      )
       .where(eq(researchApplicationLogs.researchId, researchId))
       .orderBy(desc(researchApplicationLogs.createdAt));
   }

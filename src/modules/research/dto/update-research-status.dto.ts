@@ -1,8 +1,8 @@
 import { IsIn, IsOptional, IsString, MaxLength } from "class-validator";
 
 export class UpdateResearchStatusDto {
-  @IsIn(["ONGOING", "COMPLETED", "CANCELLED"])
-  status: "ONGOING" | "COMPLETED" | "CANCELLED";
+  @IsIn(["ONGOING", "CANCELLED"])
+  status: "ONGOING" | "CANCELLED";
 
   @IsOptional()
   @IsString()

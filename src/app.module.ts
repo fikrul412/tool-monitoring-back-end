@@ -10,6 +10,9 @@ import { LaboratoryModule } from './modules/laboratory/laboratory.module.js';
 import { EquipmentModule } from './modules/equipment/equipment.module.js';
 import { MaterialsModule } from './modules/materials/materials.module.js';
 import { ResearchModule } from './modules/research/research.module.js';
+import { PersuratanModule } from './modules/persuratan/persuratan.module.js';
+import { BorrowingModule } from './modules/borrowing/borrowing.module.js';
+import { AttendanceModule } from './modules/attendance/attendance.module.js';
 
 @Module({
   imports: [
@@ -23,6 +26,9 @@ import { ResearchModule } from './modules/research/research.module.js';
     EquipmentModule,
     MaterialsModule,
     ResearchModule,
+    PersuratanModule,
+    BorrowingModule,
+    AttendanceModule,
     
   ],
   controllers: [AppController],

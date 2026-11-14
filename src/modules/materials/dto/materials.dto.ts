@@ -4,7 +4,6 @@ import {
   IsIn,
   IsInt,
   IsNotEmpty,
-  IsNumberString,
   IsOptional,
   IsString,
   IsUUID,
@@ -35,16 +34,13 @@ export class CreateMaterialDto {
   @IsUUID()
   lecturerId?: string;
 
-  @IsNumberString()
-  quantity: string;
-
   @IsString()
   @IsNotEmpty()
   unit: string;
 
   @IsOptional()
   @IsBoolean()
-  isMonitored?: boolean;
+  isAvailable?: boolean;
 }
 
 export class UpdateMaterialDto {
@@ -70,17 +66,13 @@ export class UpdateMaterialDto {
   lecturerId?: string;
 
   @IsOptional()
-  @IsNumberString()
-  quantity?: string;
-
-  @IsOptional()
   @IsString()
   @IsNotEmpty()
   unit?: string;
 
   @IsOptional()
   @IsBoolean()
-  isMonitored?: boolean;
+  isAvailable?: boolean;
 }
 
 export class GetMaterialsQueryDto {

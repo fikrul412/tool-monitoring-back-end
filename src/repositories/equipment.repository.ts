@@ -20,7 +20,9 @@ const assignedLabs = alias(labs, "assigned_labs");
 
 export interface ToolWithRelations extends Tool {
   labName: string | null;
+  labLocation: string | null;
   assignedLabName: string | null;
+  assignedLabLocation: string | null;
   categoryName: string | null;
   lecturerName: string | null;
 }
@@ -113,7 +115,9 @@ export class EquipmentRepository {
         createdAt: tools.createdAt,
         updatedAt: tools.updatedAt,
         labName: labs.name,
+        labLocation: labs.location,
         assignedLabName: assignedLabs.name,
+        assignedLabLocation: assignedLabs.location,
         categoryName: toolCategories.name,
         lecturerName: lecturers.name,
       })
@@ -146,7 +150,9 @@ export class EquipmentRepository {
         createdAt: tools.createdAt,
         updatedAt: tools.updatedAt,
         labName: labs.name,
+        labLocation: labs.location,
         assignedLabName: assignedLabs.name,
+        assignedLabLocation: assignedLabs.location,
         categoryName: toolCategories.name,
         lecturerName: lecturers.name,
       })

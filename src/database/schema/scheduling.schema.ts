@@ -36,6 +36,8 @@ export const toolSchedules = pgTable(
       withTimezone: true,
     }).notNull(),
 
+    location: text('location'),
+
     description: text('description'),
 
     createdAt: timestamp('created_at', {

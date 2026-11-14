@@ -106,9 +106,8 @@ export class MaterialsService {
       ownerType: dto.ownerType,
       labId: dto.labId ?? null,
       lecturerId: dto.lecturerId ?? null,
-      quantity: dto.quantity,
       unit: dto.unit,
-      isMonitored: dto.isMonitored ?? true,
+      isAvailable: dto.isAvailable ?? true,
     });
   }
 
@@ -140,9 +139,8 @@ export class MaterialsService {
     const updated = await this.materialsRepository.updateMaterial(id, {
       ...(dto.name !== undefined ? { name: dto.name } : {}),
       ...(dto.description !== undefined ? { description: dto.description } : {}),
-      ...(dto.quantity !== undefined ? { quantity: dto.quantity } : {}),
       ...(dto.unit !== undefined ? { unit: dto.unit } : {}),
-      ...(dto.isMonitored !== undefined ? { isMonitored: dto.isMonitored } : {}),
+      ...(dto.isAvailable !== undefined ? { isAvailable: dto.isAvailable } : {}),
       ...(dto.ownerType !== undefined ? { ownerType: dto.ownerType } : {}),
       ...(dto.labId !== undefined ? { labId: dto.labId } : {}),
       ...(dto.lecturerId !== undefined ? { lecturerId: dto.lecturerId } : {}),

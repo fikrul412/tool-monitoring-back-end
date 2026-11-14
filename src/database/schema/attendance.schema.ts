@@ -7,7 +7,7 @@ import {
 } from 'drizzle-orm/pg-core';
 
 import { labs } from './laboratory.schema.js';
-import { students } from './identity.schema.js';
+import { students, lecturers } from './identity.schema.js';
 import { researches } from './research.schema.js';
 import { attendanceStatusEnum } from './enums.js';
 
@@ -20,9 +20,9 @@ export const labAttendanceLogs = pgTable(
       .references(() => labs.id)
       .notNull(),
 
-    studentId: uuid('student_id')
-      .references(() => students.id)
-      .notNull(),
+    studentId: uuid('student_id').references(() => students.id),
+
+    lecturerId: uuid('lecturer_id').references(() => lecturers.id),
 
     researchId: uuid('research_id')
       .references(() => researches.id),
