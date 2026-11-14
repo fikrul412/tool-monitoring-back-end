@@ -24,6 +24,10 @@ export class ReviewMaterialRequestDto {
   @IsOptional() @IsString() @MaxLength(1000) comments?: string;
 }
 
+export class ReviewToolScheduleDto {
+  @IsIn(['APPROVED', 'REJECTED']) decision: 'APPROVED' | 'REJECTED';
+}
+
 export class ConfirmToolBorrowDto {
   @IsIn(['OK', 'FAILED']) result: 'OK' | 'FAILED';
   @IsUUID() toolId: string;
@@ -33,4 +37,6 @@ export class ConfirmToolBorrowDto {
 export class ConfirmToolReturnDto {
   @IsIn(['OK', 'FAILED']) result: 'OK' | 'FAILED';
   @IsUUID() toolId: string;
+  @IsOptional() @IsString() condition?: string;
+  @IsOptional() @IsString() @MaxLength(1000) notes?: string;
 }

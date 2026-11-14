@@ -98,13 +98,6 @@ export class ResearchService {
     return result.research;
   }
 
-  async requestCompletion(researchId: string, studentId: string) {
-    const result = await this.researchRepository.requestCompletion(researchId, studentId);
-    if (result.outcome === "NOT_FOUND") throw new NotFoundException("Research not found.");
-    if (result.outcome === "INVALID_TRANSITION") throw new ConflictException("Only ongoing research can be submitted for completion.");
-    return result.research;
-  }
-
   async createResearch(
     studentId: string,
     data: CreateResearchDto,

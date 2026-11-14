@@ -39,12 +39,17 @@ export class IdentityService {
     return profile;
   }
 
-  async updateMyProfile(userId: string, role: string, dto: { name: string; whatsapp?: string | null }) {
+  async updateMyProfile(userId: string, role: string, dto: { name: string; whatsapp?: string | null; nim?: string | null; studyProgram?: string | null; address?: string | null }) {
     if (role !== 'STUDENT' && role !== 'LECTURER') throw new ConflictException('Only students and lecturers can edit their profile.');
     const name = dto.name?.trim();
     const whatsapp = dto.whatsapp?.trim() || null;
     if (!name) throw new ConflictException('Name is required.');
-    const profile = await this.identityRepository.updateOwnProfile(userId, role, { name, whatsapp });
+    const nim = dto.nim?.trim() || null;
+    if (role === 'STUDENT' && nim) {
+      const existing = await this.identityRepository.findStudentByNim(nim);
+      if (existing && existing.id !== userId) throw new ConflictException('NIM already exists.');
+    }
+    const profile = await this.identityRepository.updateOwnProfile(userId, role, { name, whatsapp, ...(role === 'STUDENT' ? { ...(dto.nim !== undefined ? { nim } : {}), studyProgram: dto.studyProgram ?? null, address: dto.address ?? null } : {}) });
     if (!profile) throw new NotFoundException('Profile not found.');
     return this.getMe(userId);
   }

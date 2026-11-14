@@ -40,11 +40,11 @@ export const students = pgTable("students", {
 
     name: varchar("name", { length: 255 }).notNull(),
 
-    nim: varchar("nim", { length: 30 })
-        .notNull()
-        .unique(),
+    nim: varchar("nim", { length: 30 }).unique(),
 
     whatsapp: varchar("whatsapp", { length: 30 }),
+    studyProgram: varchar("study_program", { length: 150 }),
+    address: text("address"),
 });
 
 export const lecturers = pgTable("lecturers", {

@@ -10,7 +10,7 @@ import {
 import { tools } from './equipment.schema.js';
 import { students } from './identity.schema.js';
 import { researches } from './research.schema.js';
-import { scheduleLogTypeEnum } from './enums.js';
+import { scheduleLogTypeEnum, scheduleReviewStatusEnum } from './enums.js';
 
 export const toolSchedules = pgTable(
   'tool_schedules',
@@ -39,6 +39,8 @@ export const toolSchedules = pgTable(
     location: text('location'),
 
     description: text('description'),
+
+    reviewStatus: scheduleReviewStatusEnum('review_status').default('PENDING').notNull(),
 
     createdAt: timestamp('created_at', {
       withTimezone: true,

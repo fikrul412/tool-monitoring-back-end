@@ -13,6 +13,7 @@ import { ResearchModule } from './modules/research/research.module.js';
 import { PersuratanModule } from './modules/persuratan/persuratan.module.js';
 import { BorrowingModule } from './modules/borrowing/borrowing.module.js';
 import { AttendanceModule } from './modules/attendance/attendance.module.js';
+import { WasteModule } from './modules/waste/waste.module.js';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { AttendanceModule } from './modules/attendance/attendance.module.js';
     PersuratanModule,
     BorrowingModule,
     AttendanceModule,
+    WasteModule,
     
   ],
   controllers: [AppController],

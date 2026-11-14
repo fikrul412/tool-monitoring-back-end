@@ -55,7 +55,7 @@ export class IdentityRepository {
     return student ?? null;
   }
 
-  async updateOwnProfile(userId: string, role: 'STUDENT' | 'LECTURER', data: { name: string; whatsapp: string | null }) {
+  async updateOwnProfile(userId: string, role: 'STUDENT' | 'LECTURER', data: { name: string; whatsapp: string | null; nim?: string | null; studyProgram?: string | null; address?: string | null }) {
     if (role === 'STUDENT') {
       const [profile] = await this.db.update(students).set(data).where(eq(students.id, userId)).returning();
       return profile ?? null;
@@ -133,6 +133,8 @@ export class IdentityRepository {
           name: students.name,
           nim: students.nim,
           whatsapp: students.whatsapp,
+          studyProgram: students.studyProgram,
+          address: students.address,
         },
 
         lecturer: {
@@ -218,6 +220,7 @@ export class IdentityRepository {
     role: "STUDENT";
     status: "ACTIVE";
     providerAccountId: string;
+    name: string;
   }): Promise<User> {
     return this.db.transaction(async (tx) => {
       const [user] = await tx
@@ -229,6 +232,8 @@ export class IdentityRepository {
           passwordHash: null,
         })
         .returning();
+
+      await tx.insert(students).values({ id: user.id, name: data.name, nim: null });
 
       await tx.insert(authAccounts).values({
         userId: user.id,
@@ -265,6 +270,9 @@ export class IdentityRepository {
     passwordHash: string;
     name: string;
     nim: string;
+    studyProgram?: string;
+    whatsapp?: string;
+    address?: string;
     status: "PENDING_VERIFICATION";
   }) {
     return this.db.transaction(async (tx) => {
@@ -282,6 +290,9 @@ export class IdentityRepository {
         id: user.id,
         name: data.name,
         nim: data.nim,
+        studyProgram: data.studyProgram,
+        whatsapp: data.whatsapp,
+        address: data.address,
       });
 
       return user;

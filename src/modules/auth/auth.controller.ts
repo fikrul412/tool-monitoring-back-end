@@ -1,5 +1,5 @@
 import { Body, Controller, Post, Get, Query, Res, Req, UseGuards, HttpCode, HttpStatus, HttpException } from '@nestjs/common';
-import { LoginUserLocalDto, RegisterUserLocalDto, ResendVerificationDto } from './dto/auth.dto.js';
+import { LoginUserLocalDto, RegisterUserLocalDto, ResendVerificationDto, RequestPasswordResetDto, ResetPasswordDto } from './dto/auth.dto.js';
 import { AuthService } from './auth.service.js';
 import { GoogleOAuthUser } from './interfaces/google-oauth-user.interface.js';
 import { GoogleAuthGuard } from '../../guards/google-auth.guard.js';
@@ -132,5 +132,17 @@ export class AuthController {
         @Body() dto: ResendVerificationDto,
     ) {
         return this.authService.resendStudentVerification(dto);
+    }
+
+    @Post('password-reset/request')
+    @HttpCode(HttpStatus.OK)
+    requestPasswordReset(@Body() dto: RequestPasswordResetDto) {
+        return this.authService.requestPasswordReset(dto.email);
+    }
+
+    @Post('password-reset/confirm')
+    @HttpCode(HttpStatus.OK)
+    confirmPasswordReset(@Body() dto: ResetPasswordDto) {
+        return this.authService.resetPassword(dto.token, dto.password);
     }
 }

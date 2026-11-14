@@ -4,6 +4,7 @@ import {
     IsString,
     MinLength,
     MaxLength,
+    IsOptional,
 } from "class-validator";
 
 export class RegisterUserLocalDto {
@@ -16,6 +17,10 @@ export class RegisterUserLocalDto {
     @IsString()
     @MaxLength(30)
     nim: string;
+
+    @IsOptional() @IsString() @MaxLength(150) studyProgram?: string;
+    @IsOptional() @IsString() @MaxLength(30) whatsapp?: string;
+    @IsOptional() @IsString() @MaxLength(2000) address?: string;
 
     @IsNotEmpty()
     @IsEmail({}, {
@@ -50,4 +55,13 @@ export class ResendVerificationDto {
     @IsNotEmpty()
     @IsEmail()
     email: string;
+}
+
+export class RequestPasswordResetDto {
+    @IsNotEmpty() @IsEmail() email: string;
+}
+
+export class ResetPasswordDto {
+    @IsNotEmpty() @IsString() token: string;
+    @IsNotEmpty() @IsString() @MinLength(8) password: string;
 }

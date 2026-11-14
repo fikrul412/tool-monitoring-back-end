@@ -21,11 +21,14 @@ export class BorrowingService {
   }
   confirmReturn(studentId: string, dto: ConfirmToolReturnDto) {
     if (dto.result === 'FAILED') return { authenticated: false, changed: false };
-    return this.repo.confirmToolReturn(studentId, dto.toolId);
+    if (!dto.condition?.trim()) throw new BadRequestException('Returned equipment condition is required.');
+    return this.repo.confirmToolReturn(studentId, dto.toolId, dto.condition, dto.notes);
   }
   myTools(studentId: string) { return this.repo.myTools(studentId); }
   schedules(toolId?: string) { return this.repo.schedules(toolId); }
   mySchedules(studentId: string) { return this.repo.mySchedules(studentId); }
+  pendingSchedules() { return this.repo.pendingSchedules(); }
+  reviewSchedule(id: string, decision: 'APPROVED' | 'REJECTED') { return this.repo.reviewSchedule(id, decision); }
   requestSchedule(studentId: string, dto: CreateToolScheduleDto) {
     const start = new Date(dto.startTime); const end = new Date(dto.endTime);
     if (!Number.isFinite(start.getTime()) || !Number.isFinite(end.getTime())) throw new BadRequestException('Valid schedule start and end times are required.');

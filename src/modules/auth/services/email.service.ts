@@ -38,4 +38,9 @@ export class EmailService {
         `,
         });
     }
+
+    async sendPasswordResetEmail(email: string, token: string) {
+        const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3001'}/reset-password?token=${encodeURIComponent(token)}`;
+        return this.transporter.sendMail({ from: process.env.MAIL_FROM, to: email, subject: 'Reset Your Tool Monitor Password', html: `<h2>Password reset</h2><p>Use this link to choose a new password:</p><p><a href="${resetUrl}">Reset password</a></p><p>This link expires in 30 minutes. If you did not request this, ignore this email.</p>` });
+    }
 }

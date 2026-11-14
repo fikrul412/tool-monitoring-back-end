@@ -70,6 +70,8 @@ export const scheduleLogTypeEnum = pgEnum('schedule_log_type', [
   'CANCEL',
 ]);
 
+export const scheduleReviewStatusEnum = pgEnum('schedule_review_status', ['PENDING', 'APPROVED', 'REJECTED']);
+
 export const borrowingTypeEnum = pgEnum('borrowing_type', [
   'BORROW',
   'RETURN',

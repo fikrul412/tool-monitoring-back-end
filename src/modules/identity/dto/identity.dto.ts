@@ -6,6 +6,7 @@ import {
   IsInt,
   IsOptional,
   IsString,
+  MaxLength,
   Min,
   MinLength,
   Max,
@@ -93,6 +94,11 @@ export class UpdateOwnProfileDto {
   @IsOptional()
   @IsString()
   whatsapp?: string | null;
+
+  @IsOptional() @IsString() @MaxLength(30) nim?: string | null;
+
+  @IsOptional() @IsString() studyProgram?: string | null;
+  @IsOptional() @IsString() address?: string | null;
 }
 
 export class GetLecturersQueryDto {

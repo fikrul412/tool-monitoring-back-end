@@ -40,7 +40,7 @@ export class BorrowingRepository {
     const [tool] = await this.db.select({ id: tools.id, status: tools.status }).from(tools).where(eq(tools.id, toolId)).limit(1);
     if (!tool) throw new NotFoundException('Tool not found.');
     const start = new Date(); const end = new Date(start.getTime() + durationMinutes * 60_000);
-    const [conflict] = await this.db.select({ id: toolSchedules.id }).from(toolSchedules).where(and(eq(toolSchedules.toolId, toolId), lt(toolSchedules.startTime, end), gt(toolSchedules.endTime, start))).limit(1);
+    const [conflict] = await this.db.select({ id: toolSchedules.id }).from(toolSchedules).where(and(eq(toolSchedules.toolId, toolId), eq(toolSchedules.reviewStatus, 'APPROVED'), lt(toolSchedules.startTime, end), gt(toolSchedules.endTime, start))).limit(1);
     if (tool.status !== 'AVAILABLE' || conflict) return { toolId, result: 'REJECTED' as const };
     return { toolId, result: 'QR_REQUIRED' as const, qrPayload: toolId };
   }
@@ -51,7 +51,7 @@ export class BorrowingRepository {
       if (!tool) throw new NotFoundException('Tool not found.');
       if (tool.status !== 'AVAILABLE') return { result: 'REJECTED' as const };
       const start = new Date(); const plannedEnd = new Date(start.getTime() + durationMinutes * 60_000);
-      const [scheduleConflict] = await tx.select({ id: toolSchedules.id }).from(toolSchedules).where(and(eq(toolSchedules.toolId, toolId), lt(toolSchedules.startTime, plannedEnd), gt(toolSchedules.endTime, start))).limit(1);
+      const [scheduleConflict] = await tx.select({ id: toolSchedules.id }).from(toolSchedules).where(and(eq(toolSchedules.toolId, toolId), eq(toolSchedules.reviewStatus, 'APPROVED'), lt(toolSchedules.startTime, plannedEnd), gt(toolSchedules.endTime, start))).limit(1);
       if (scheduleConflict) return { result: 'REJECTED' as const };
       const [log] = await tx.insert(toolBorrowingLogs).values({ toolId, studentId, type: 'BORROW', status: 'BORROWED', description: `Tool borrow authenticated; duration: ${durationMinutes} minutes` }).returning();
       await tx.update(tools).set({ status: 'IN_USE', updatedAt: new Date() }).where(eq(tools.id, toolId));
@@ -67,14 +67,16 @@ export class BorrowingRepository {
     return { toolId, qrPayload: toolId };
   }
 
-  async confirmToolReturn(studentId: string, toolId: string) {
+  async confirmToolReturn(studentId: string, toolId: string, condition: string, notes?: string) {
     return this.db.transaction(async tx => {
       const [tool] = await tx.select({ id: tools.id, status: tools.status }).from(tools).where(eq(tools.id, toolId)).for('update');
       if (!tool || tool.status !== 'IN_USE') throw new ConflictException('Tool is no longer in use.');
       const [lastEvent] = await tx.select().from(toolBorrowingLogs).where(and(eq(toolBorrowingLogs.toolId, toolId), eq(toolBorrowingLogs.studentId, studentId), inArray(toolBorrowingLogs.status, ['BORROWED', 'AVAILABLE']))).orderBy(desc(toolBorrowingLogs.time)).limit(1);
       if (!lastEvent || lastEvent.type !== 'BORROW' || lastEvent.status !== 'BORROWED') throw new ConflictException('No active borrowing found for this tool.');
-      const [log] = await tx.insert(toolBorrowingLogs).values({ toolId, studentId, type: 'RETURN', status: 'AVAILABLE', description: 'Tool return authenticated.' }).returning();
-      await tx.update(tools).set({ status: 'AVAILABLE', updatedAt: new Date() }).where(eq(tools.id, toolId));
+      const normalized = condition.toLowerCase();
+      const status = normalized.includes('damag') || normalized.includes('rusak') ? 'MAINTENANCE' : normalized.includes('lost') || normalized.includes('hilang') ? 'UNAVAILABLE' : 'AVAILABLE';
+      const [log] = await tx.insert(toolBorrowingLogs).values({ toolId, studentId, type: 'RETURN', status: status === 'AVAILABLE' ? 'AVAILABLE' : status === 'MAINTENANCE' ? 'DAMAGED' : 'LOST', description: `Tool return authenticated. Condition: ${condition.trim()}${notes?.trim() ? `. ${notes.trim()}` : ''}` }).returning();
+      await tx.update(tools).set({ status, updatedAt: new Date() }).where(eq(tools.id, toolId));
       return log;
     });
   }
@@ -92,24 +94,43 @@ export class BorrowingRepository {
       const locationLabId = tool.assignedLabId ?? tool.labId;
       const [lab] = locationLabId ? await tx.select({ location: labs.location }).from(labs).where(eq(labs.id, locationLabId)).limit(1) : [];
       const location = lab?.location ?? 'Lab location not set';
-      const [conflict] = await tx.select({ id: toolSchedules.id }).from(toolSchedules).where(and(eq(toolSchedules.toolId, toolId), lt(toolSchedules.startTime, end), gt(toolSchedules.endTime, start))).limit(1);
+      const [conflict] = await tx.select({ id: toolSchedules.id }).from(toolSchedules).where(and(eq(toolSchedules.toolId, toolId), eq(toolSchedules.reviewStatus, 'APPROVED'), lt(toolSchedules.startTime, end), gt(toolSchedules.endTime, start))).limit(1);
       if (conflict) {
         await tx.insert(toolScheduleLogs).values({ toolId, studentId, timeStart: start, timeEnd: end, type: 'REQUEST', description: 'REJECTED: this tool is already scheduled for that period.' });
         return { result: 'REJECTED' as const };
       }
       const [schedule] = await tx.insert(toolSchedules).values({ toolId, studentId, startTime: start, endTime: end, location, description: description?.trim() || null }).returning();
-      await tx.insert(toolScheduleLogs).values({ toolId, studentId, scheduleId: schedule.id, timeStart: start, timeEnd: end, type: 'REQUEST', description: 'Automatically accepted; no schedule conflict.' });
+      await tx.insert(toolScheduleLogs).values({ toolId, studentId, scheduleId: schedule.id, timeStart: start, timeEnd: end, type: 'REQUEST', description: 'Pending admin approval.' });
       return schedule;
     });
   }
 
   schedules(toolId?: string) {
-    return this.db.select({ id: toolSchedules.id, toolId: tools.id, toolName: tools.name, studentId: students.id, studentName: students.name, startTime: toolSchedules.startTime, endTime: toolSchedules.endTime, location: toolSchedules.location, description: toolSchedules.description })
-      .from(toolSchedules).innerJoin(tools, eq(toolSchedules.toolId, tools.id)).innerJoin(students, eq(toolSchedules.studentId, students.id)).where(toolId ? eq(toolSchedules.toolId, toolId) : undefined).orderBy(asc(toolSchedules.startTime));
+    return this.db.select({ id: toolSchedules.id, toolId: tools.id, toolName: tools.name, studentId: students.id, studentName: students.name, startTime: toolSchedules.startTime, endTime: toolSchedules.endTime, location: toolSchedules.location, description: toolSchedules.description, reviewStatus: toolSchedules.reviewStatus })
+      .from(toolSchedules).innerJoin(tools, eq(toolSchedules.toolId, tools.id)).innerJoin(students, eq(toolSchedules.studentId, students.id)).where(and(eq(toolSchedules.reviewStatus, 'APPROVED'), toolId ? eq(toolSchedules.toolId, toolId) : undefined)).orderBy(asc(toolSchedules.startTime));
   }
 
   mySchedules(studentId: string) {
-    return this.db.select({ id: toolSchedules.id, toolId: tools.id, toolName: tools.name, studentId: students.id, studentName: students.name, startTime: toolSchedules.startTime, endTime: toolSchedules.endTime, location: toolSchedules.location, description: toolSchedules.description })
+    return this.db.select({ id: toolSchedules.id, toolId: tools.id, toolName: tools.name, studentId: students.id, studentName: students.name, startTime: toolSchedules.startTime, endTime: toolSchedules.endTime, location: toolSchedules.location, description: toolSchedules.description, reviewStatus: toolSchedules.reviewStatus })
       .from(toolSchedules).innerJoin(tools, eq(toolSchedules.toolId, tools.id)).innerJoin(students, eq(toolSchedules.studentId, students.id)).where(eq(toolSchedules.studentId, studentId)).orderBy(asc(toolSchedules.startTime));
+  }
+
+  pendingSchedules() {
+    return this.db.select({ id: toolSchedules.id, toolId: tools.id, toolName: tools.name, studentId: students.id, studentName: students.name, nim: students.nim, startTime: toolSchedules.startTime, endTime: toolSchedules.endTime, location: toolSchedules.location, description: toolSchedules.description })
+      .from(toolSchedules).innerJoin(tools, eq(toolSchedules.toolId, tools.id)).innerJoin(students, eq(toolSchedules.studentId, students.id)).where(eq(toolSchedules.reviewStatus, 'PENDING')).orderBy(asc(toolSchedules.startTime));
+  }
+
+  async reviewSchedule(id: string, decision: 'APPROVED' | 'REJECTED') {
+    return this.db.transaction(async tx => {
+      const [schedule] = await tx.select().from(toolSchedules).where(eq(toolSchedules.id, id)).for('update');
+      if (!schedule || schedule.reviewStatus !== 'PENDING') throw new ConflictException('Schedule request was already reviewed or no longer exists.');
+      if (decision === 'APPROVED') {
+        const [conflict] = await tx.select({ id: toolSchedules.id }).from(toolSchedules).where(and(eq(toolSchedules.toolId, schedule.toolId), eq(toolSchedules.reviewStatus, 'APPROVED'), lt(toolSchedules.startTime, schedule.endTime), gt(toolSchedules.endTime, schedule.startTime))).limit(1);
+        if (conflict) throw new ConflictException('Another approved schedule overlaps this request.');
+      }
+      const [updated] = await tx.update(toolSchedules).set({ reviewStatus: decision }).where(eq(toolSchedules.id, id)).returning();
+      await tx.insert(toolScheduleLogs).values({ toolId: schedule.toolId, studentId: schedule.studentId, scheduleId: id, timeStart: schedule.startTime, timeEnd: schedule.endTime, type: 'REQUEST', description: `Admin ${decision.toLowerCase()} schedule request.` });
+      return updated;
+    });
   }
 }

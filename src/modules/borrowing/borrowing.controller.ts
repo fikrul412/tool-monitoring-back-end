@@ -5,7 +5,7 @@ import { RolesGuard } from '../../guards/roles.guard.js';
 import { Roles } from '../auth/roles.decorator.js';
 import type { AuthenticatedUser } from '../auth/interfaces/authenticated-user.interface.js';
 import { BorrowingService } from './borrowing.service.js';
-import { ConfirmToolBorrowDto, ConfirmToolReturnDto, CreateMaterialRequestDto, CreateToolBorrowDto, CreateToolScheduleDto, ReviewMaterialRequestDto } from './borrowing.dto.js';
+import { ConfirmToolBorrowDto, ConfirmToolReturnDto, CreateMaterialRequestDto, CreateToolBorrowDto, CreateToolScheduleDto, ReviewMaterialRequestDto, ReviewToolScheduleDto } from './borrowing.dto.js';
 
 type AuthRequest = Request & { user: AuthenticatedUser };
 
@@ -28,4 +28,6 @@ export class BorrowingController {
   @Roles('STUDENT') @Get('schedules') schedules(@Query('toolId') toolId?: string) { return this.service.schedules(toolId); }
   @Roles('STUDENT') @Get('schedules/me') mySchedules(@Req() req: AuthRequest) { return this.service.mySchedules(req.user.sub); }
   @Roles('STUDENT') @Post('schedules') requestSchedule(@Req() req: AuthRequest, @Body() dto: CreateToolScheduleDto) { return this.service.requestSchedule(req.user.sub, dto); }
+  @Roles('ADMIN') @Get('admin/schedules/pending') pendingSchedules() { return this.service.pendingSchedules(); }
+  @Roles('ADMIN') @Post('admin/schedules/:id/review') reviewSchedule(@Param('id', ParseUUIDPipe) id: string, @Body() body: ReviewToolScheduleDto) { return this.service.reviewSchedule(id, body.decision); }
 }

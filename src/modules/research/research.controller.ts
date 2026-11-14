@@ -71,15 +71,6 @@ export class ResearchController {
         return this.researchService.updateResearchStatus(id, data);
     }
 
-    @Post(":id/complete")
-    @Roles("STUDENT")
-    async requestResearchCompletion(
-        @Param("id", ParseUUIDPipe) id: string,
-        @Req() req: AuthenticatedRequest,
-    ) {
-        return this.researchService.requestCompletion(id, req.user.sub);
-    }
-
     @Post()
     @Roles("STUDENT")
     async createResearch(

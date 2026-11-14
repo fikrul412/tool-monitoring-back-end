@@ -48,6 +48,9 @@ export class AuthService {
             passwordHash,
             name: dto.name,
             nim: dto.nim,
+            studyProgram: dto.studyProgram,
+            whatsapp: dto.whatsapp,
+            address: dto.address,
             status: "PENDING_VERIFICATION",
         });
 
@@ -167,6 +170,7 @@ export class AuthService {
                     role: "STUDENT",
                     status: "ACTIVE",
                     providerAccountId: googleUser.providerAccountId,
+                    name: googleUser.name,
                 });
             }
         }
@@ -219,5 +223,25 @@ export class AuthService {
         );
 
         return response;
+    }
+
+    async requestPasswordReset(email: string) {
+        const response = { message: 'If an account exists for that email, a password reset link has been sent.' };
+        const user = await this.identityRepo.findUserByEmail(email);
+        if (!user || !user.passwordHash || user.status !== 'ACTIVE') return response;
+        const token = this.emailVerification.generateToken();
+        await this.authRepo.createPasswordResetToken(user.id, this.emailVerification.hashToken(token), new Date(Date.now() + 30 * 60 * 1000));
+        await this.emailService.sendPasswordResetEmail(email, token);
+        return response;
+    }
+
+    async resetPassword(token: string, password: string) {
+        const tokenHash = this.emailVerification.hashToken(token);
+        const existing = await this.authRepo.findPasswordResetToken(tokenHash);
+        if (!existing || existing.expiresAt < new Date()) throw new BadRequestException('Password reset link is invalid or expired.');
+        const passwordHash = await this.passwordHash.hash(password);
+        const updated = await this.authRepo.updatePasswordWithResetToken(tokenHash, passwordHash);
+        if (!updated) throw new BadRequestException('Password reset link is invalid or expired.');
+        return { message: 'Password has been reset. You can now sign in.' };
     }
 }
