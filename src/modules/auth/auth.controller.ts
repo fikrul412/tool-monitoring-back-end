@@ -35,6 +35,7 @@ export class AuthController {
 
         return {
             user: result.user,
+            accessToken: result.accessToken,
         };
     }
 
@@ -108,7 +109,7 @@ export class AuthController {
             path: "/",
         });
 
-        return res.redirect(`${process.env.FRONTEND_URL}/dashboard`);
+        return res.redirect(`${process.env.FRONTEND_URL}/dashboard#access_token=${encodeURIComponent(result.accessToken)}`);
     }
 
     @Post("logout")

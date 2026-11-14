@@ -8,6 +8,8 @@ import { AttendanceController } from './attendance.controller.js';
 import { AttendanceRepository } from './attendance.repository.js';
 import { IdentityController } from '../identity/identity.controller.js';
 import { IdentityService } from '../identity/identity.service.js';
+import { AuthController } from '../auth/auth.controller.js';
+import { AuthService } from '../auth/auth.service.js';
 
 describe('Attendance and self-profile HTTP API', () => {
   let app: INestApplication;
@@ -21,13 +23,15 @@ describe('Attendance and self-profile HTTP API', () => {
     summary: vi.fn().mockResolvedValue({ totalLogs: 0, entriesToday: 0, exitsToday: 0, currentlyInLabs: 0, recentLogs: [] }),
   };
   const identity = { updateMyProfile: vi.fn().mockResolvedValue({ id: 'user-1' }) };
+  const auth = { loginLocalUser: vi.fn().mockResolvedValue({ accessToken: 'signed-token', user: { id: 'user-1', role: 'STUDENT' } }) };
 
   beforeAll(async () => {
     const module = await Test.createTestingModule({
-      controllers: [AttendanceController, IdentityController],
+      controllers: [AttendanceController, IdentityController, AuthController],
       providers: [
         { provide: AttendanceRepository, useValue: attendance },
         { provide: IdentityService, useValue: identity },
+        { provide: AuthService, useValue: auth },
       ],
     }).overrideGuard(JwtAuthGuard).useValue({
       canActivate(context) {
@@ -68,5 +72,14 @@ describe('Attendance and self-profile HTTP API', () => {
     role = 'LECTURER';
     await request(app.getHttpServer()).patch('/identity/me/profile').send({ name: 'Dr. Example', whatsapp: '08123456789' }).expect(200).expect({ id: 'user-1' });
     expect(identity.updateMyProfile).toHaveBeenCalledWith('user-1', 'LECTURER', { name: 'Dr. Example', whatsapp: '08123456789' });
+  });
+
+  it('returns the signed access token while preserving the existing login route', async () => {
+    await request(app.getHttpServer()).post('/auth/login').send({ email: 'user@example.test', password: 'password123' }).expect(201)
+      .expect(({ body }) => {
+        expect(body.user.id).toBe('user-1');
+        expect(body.accessToken).toBe('signed-token');
+      });
+    expect(auth.loginLocalUser).toHaveBeenCalledWith({ email: 'user@example.test', password: 'password123' });
   });
 });
