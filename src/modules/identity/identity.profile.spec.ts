@@ -10,20 +10,22 @@ describe('IdentityService own profile', () => {
 
   beforeEach(() => vi.clearAllMocks());
 
-  it.each(['STUDENT', 'LECTURER'])('updates only name and WhatsApp for %s', async role => {
+  it.each(['STUDENT', 'LECTURER'])('updates the editable profile fields for %s', async role => {
     repository.updateOwnProfile.mockResolvedValue({ id: 'user-1' });
     repository.findUserWithProfileById.mockResolvedValue({ id: 'user-1', role, profile: { name: 'New Name', whatsapp: '0812' } });
 
     await expect(service.updateMyProfile('user-1', role, { name: '  New Name ', whatsapp: ' 0812 ' }))
       .resolves.toMatchObject({ profile: { name: 'New Name', whatsapp: '0812' } });
-    expect(repository.updateOwnProfile).toHaveBeenCalledWith('user-1', role, { name: 'New Name', whatsapp: '0812' });
+    expect(repository.updateOwnProfile).toHaveBeenCalledWith('user-1', role, role === 'STUDENT'
+      ? { name: 'New Name', whatsapp: '0812', studyProgram: null, address: null }
+      : { name: 'New Name', whatsapp: '0812' });
   });
 
   it('normalizes omitted WhatsApp to null', async () => {
     repository.updateOwnProfile.mockResolvedValue({ id: 'user-1' });
     repository.findUserWithProfileById.mockResolvedValue({ id: 'user-1', role: 'STUDENT' });
     await service.updateMyProfile('user-1', 'STUDENT', { name: 'A Name' });
-    expect(repository.updateOwnProfile).toHaveBeenCalledWith('user-1', 'STUDENT', { name: 'A Name', whatsapp: null });
+    expect(repository.updateOwnProfile).toHaveBeenCalledWith('user-1', 'STUDENT', { name: 'A Name', whatsapp: null, studyProgram: null, address: null });
   });
 
   it('rejects admin profile edits', async () => {

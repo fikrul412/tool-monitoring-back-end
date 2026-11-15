@@ -10,13 +10,14 @@ import { IdentityController } from '../identity/identity.controller.js';
 import { IdentityService } from '../identity/identity.service.js';
 import { AuthController } from '../auth/auth.controller.js';
 import { AuthService } from '../auth/auth.service.js';
+import { QrService } from '../qr/qr.service.js';
 
 describe('Attendance and self-profile HTTP API', () => {
   let app: INestApplication;
   let role: 'STUDENT' | 'LECTURER' | 'ADMIN' = 'STUDENT';
   const attendance = {
     options: vi.fn().mockResolvedValue({ labs: [], researches: [], current: null }),
-    request: vi.fn().mockResolvedValue({ result: 'QR_REQUIRED', type: 'ENTRY', qrPayload: 'challenge' }),
+    request: vi.fn().mockImplementation(async (_userId, _role, labId, researchId) => ({ result: 'QR_REQUIRED', type: 'ENTRY', labId, researchId: researchId ?? null, qrPayload: 'challenge' })),
     confirm: vi.fn().mockImplementation((_userId, _role, dto) => Promise.resolve(dto.result === 'FAILED' ? { authenticated: false, changed: false } : { authenticated: true, changed: true })),
     recent: vi.fn().mockResolvedValue([]),
     logs: vi.fn().mockResolvedValue([]),
@@ -24,6 +25,10 @@ describe('Attendance and self-profile HTTP API', () => {
   };
   const identity = { updateMyProfile: vi.fn().mockResolvedValue({ id: 'user-1' }) };
   const auth = { loginLocalUser: vi.fn().mockResolvedValue({ accessToken: 'signed-token', user: { id: 'user-1', role: 'STUDENT' } }) };
+  const qr = {
+    issue: vi.fn().mockResolvedValue({ token: 'qr-token', jti: '22222222-2222-4222-8222-222222222222', expiresAt: new Date(Date.now() + 300_000).toISOString() }),
+    consumeVerification: vi.fn().mockResolvedValue(undefined),
+  };
 
   beforeAll(async () => {
     const module = await Test.createTestingModule({
@@ -32,6 +37,7 @@ describe('Attendance and self-profile HTTP API', () => {
         { provide: AttendanceRepository, useValue: attendance },
         { provide: IdentityService, useValue: identity },
         { provide: AuthService, useValue: auth },
+        { provide: QrService, useValue: qr },
       ],
     }).overrideGuard(JwtAuthGuard).useValue({
       canActivate(context) {
@@ -55,10 +61,12 @@ describe('Attendance and self-profile HTTP API', () => {
 
   it('creates a read-only QR challenge and confirms okay or failed scans', async () => {
     await request(app.getHttpServer()).post('/attendance/request').send({ labId: '11111111-1111-4111-8111-111111111111' }).expect(201);
-    await request(app.getHttpServer()).post('/attendance/confirm').send({ labId: '11111111-1111-4111-8111-111111111111', type: 'ENTRY', result: 'FAILED' }).expect(201).expect({ authenticated: false, changed: false });
-    await request(app.getHttpServer()).post('/attendance/confirm').send({ labId: '11111111-1111-4111-8111-111111111111', type: 'ENTRY', result: 'OK' }).expect(201).expect({ authenticated: true, changed: true });
+    const qrJti = '22222222-2222-4222-8222-222222222222';
+    await request(app.getHttpServer()).post('/attendance/confirm').send({ labId: '11111111-1111-4111-8111-111111111111', type: 'ENTRY', result: 'FAILED', qrJti }).expect(201).expect({ authenticated: false, changed: false });
+    await request(app.getHttpServer()).post('/attendance/confirm').send({ labId: '11111111-1111-4111-8111-111111111111', type: 'ENTRY', result: 'OK', qrJti }).expect(201).expect({ authenticated: true, changed: true });
     expect(attendance.request).toHaveBeenCalledWith('user-1', 'STUDENT', '11111111-1111-4111-8111-111111111111', undefined);
     expect(attendance.confirm).toHaveBeenCalledTimes(2);
+    expect(qr.issue).toHaveBeenCalledWith('user-1', 'STUDENT', 'ATTENDANCE', { labId: '11111111-1111-4111-8111-111111111111', researchId: null, type: 'ENTRY' });
   });
 
   it('protects admin attendance logs and summary by role', async () => {

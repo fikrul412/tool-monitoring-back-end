@@ -10,4 +10,5 @@ export class AttendanceConfirmDto {
   @IsOptional() @IsUUID() researchId?: string;
   @IsIn(['ENTRY', 'EXIT']) type: 'ENTRY' | 'EXIT';
   @IsIn(['OK', 'FAILED']) result: 'OK' | 'FAILED';
+  @IsUUID() qrJti: string;
 }

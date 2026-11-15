@@ -24,3 +24,5 @@ export * from './borrowing.schema.js';
 export * from './auth.schema.js'
 
 export * from './persuratan.schema.js';
+
+export * from '../../modules/qr/qr-challenge.schema.js';

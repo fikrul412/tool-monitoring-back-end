@@ -1,4 +1,5 @@
-import 'dotenv/config';
+import { config as loadEnv } from 'dotenv';
+loadEnv({ path: ['../.env', '.env'] });
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller.js';
 import { DrizzleModule } from "@nestjs/drizzle"
@@ -14,6 +15,7 @@ import { PersuratanModule } from './modules/persuratan/persuratan.module.js';
 import { BorrowingModule } from './modules/borrowing/borrowing.module.js';
 import { AttendanceModule } from './modules/attendance/attendance.module.js';
 import { WasteModule } from './modules/waste/waste.module.js';
+import { QrModule } from './modules/qr/qr.module.js';
 
 @Module({
   imports: [
@@ -31,6 +33,7 @@ import { WasteModule } from './modules/waste/waste.module.js';
     BorrowingModule,
     AttendanceModule,
     WasteModule,
+    QrModule,
     
   ],
   controllers: [AppController],

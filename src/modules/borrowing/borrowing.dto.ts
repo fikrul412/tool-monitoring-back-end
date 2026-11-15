@@ -31,12 +31,14 @@ export class ReviewToolScheduleDto {
 export class ConfirmToolBorrowDto {
   @IsIn(['OK', 'FAILED']) result: 'OK' | 'FAILED';
   @IsUUID() toolId: string;
+  @IsUUID() qrJti: string;
   @Type(() => Number) @IsNumber() @Min(1) durationMinutes: number;
 }
 
 export class ConfirmToolReturnDto {
   @IsIn(['OK', 'FAILED']) result: 'OK' | 'FAILED';
   @IsUUID() toolId: string;
+  @IsUUID() qrJti: string;
   @IsOptional() @IsString() condition?: string;
   @IsOptional() @IsString() @MaxLength(1000) notes?: string;
 }

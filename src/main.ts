@@ -1,9 +1,14 @@
 import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module.js';
 import { ValidationPipe } from '@nestjs/common';
 import cookieParser from "cookie-parser";
+import { config as loadEnv } from 'dotenv';
+
+// Load the workspace or backend environment before importing AppModule. Its
+// auth providers read JWT_ACCESS_SECRET when their modules are evaluated.
+loadEnv({ path: ['../.env', '.env'] });
 
 async function bootstrap() {
+  const { AppModule } = await import('./app.module.js');
   const app = await NestFactory.create(AppModule);
   app.use(cookieParser());
   app.enableCors({

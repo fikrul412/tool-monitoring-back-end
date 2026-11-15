@@ -92,6 +92,13 @@
                         "when":  1794701700000,
                         "tag":  "0012_waste_catalog_and_google_student_profiles",
                         "breakpoints":  true
+                    },
+                    {
+                        "idx":  13,
+                        "version":  "7",
+                        "when":  1794772647000,
+                        "tag":  "0013_qr_challenges",
+                        "breakpoints":  true
                     }
                 ]
 }
