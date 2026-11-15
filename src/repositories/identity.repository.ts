@@ -57,7 +57,10 @@ export class IdentityRepository {
 
   async updateOwnProfile(userId: string, role: 'STUDENT' | 'LECTURER', data: { name: string; whatsapp: string | null; nim?: string | null; studyProgram?: string | null; address?: string | null }) {
     if (role === 'STUDENT') {
-      const [profile] = await this.db.update(students).set(data).where(eq(students.id, userId)).returning();
+      const [profile] = await this.db.insert(students)
+        .values({ id: userId, name: data.name, nim: data.nim ?? null, whatsapp: data.whatsapp, studyProgram: data.studyProgram ?? null, address: data.address ?? null })
+        .onConflictDoUpdate({ target: students.id, set: data })
+        .returning();
       return profile ?? null;
     }
     const [profile] = await this.db.update(lecturers).set(data).where(eq(lecturers.id, userId)).returning();
